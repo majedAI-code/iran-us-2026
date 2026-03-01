@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>إحاطة | رصد وتحليل التصعيد</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;500;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #1a1d24;
+  --header-bg: #14161b;
+  --accent: #3b82f6;
+  --red: #e11d48;
+  --border: #2d333f;
+  --text: #f8fafc;
+  --text-dim: #94a3b8;
+  --card-bg: #21252d;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+body { font-family: 'Tajawal', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; overflow-x: hidden; }
+
+/* الهيدر والعناصر الثابتة */
+.top-section { position: sticky; top: 0; z-index: 2000; width: 100%; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+.main-header { background: var(--header-bg); border-bottom: 1px solid var(--border); padding: 15px 0; text-align: center; }
+.brand-logo { font-size: 28px; font-weight: 800; letter-spacing: 1px; color: white; text-decoration: none; display: block; }
+.status-bar { background: var(--red); color: white; padding: 6px 0; text-align: center; font-weight: bold; font-size: 13px; }
+
+.nav-bar { background: #1a1d24; border-bottom: 1px solid var(--border); padding: 10px; display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; }
+.nav-item { padding: 5px 12px; border-radius: 6px; font-size: 12px; color: var(--text-dim); cursor: pointer; border: 1px solid transparent; }
+.nav-item.active { background: var(--accent); color: white; }
+
+.controls { background: #14161b; padding: 10px 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 11px; }
+.lang-box { display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; background: #000; }
+.lang-btn { background: transparent; border: none; color: var(--text-dim); padding: 4px 10px; cursor: pointer; font-size: 11px; font-family: 'Tajawal'; }
+.lang-btn.active { background: var(--accent); color: white; }
+
+/* قائمة الأخبار */
+.container { max-width: 800px; margin: 15px auto; padding: 0 12px; }
+.news-list { display: flex; flex-direction: column; gap: 10px; }
+.news-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 18px; transition: 0.3s; }
+
+.card-header { display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center; }
+.source-badge { background: rgba(59, 130, 246, 0.15); color: var(--accent); padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; }
+.new-tag { color: #10b981; font-weight: bold; font-size: 10px; display: flex; align-items: center; gap: 4px; }
+.new-tag::before { content: ''; width: 6px; height: 6px; background: #10b981; border-radius: 50%; display: inline-block; box-shadow: 0 0 5px #10b981; }
+
+.news-title { font-size: 17px; font-weight: 700; color: white; margin-bottom: 8px; text-decoration: none; display: block; line-height: 1.5; }
+.news-desc { font-size: 13px; color: var(--text-dim); margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.card-footer { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-dim); border-top: 1px solid rgba(255,255,255,0.03); padding-top: 10px; }
+
+@media (max-width: 600px) { 
+    .brand-logo { font-size: 24px; }
+    .news-title { font-size: 16px; }
+    .nav-bar { justify-content: flex-start; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; }
+}
+</style>
+</head>
+<body>
+
+<div class="top-section">
+    <div class="main-header"><a href="#" class="brand-logo">إحاطة</a></div>
+    <div class="status-bar">متابعة وتحليل التصعيد الأمريكي الإيراني</div>
+    <nav class="nav-bar">
+        <div class="nav-item active">🏠 الرئيسية</div>
+        <div class="nav-item">📄 التقارير</div>
+        <div class="nav-item">📡 المصادر</div>
+        <div class="nav-item" style="color: var(--red);">🔴 عاجل</div>
+    </nav>
+    <div class="controls">
+        <div id="clock" style="font-family: 'IBM Plex Mono'; color: var(--text-dim);">00:00:00</div>
+        <div class="lang-box">
+            <button class="lang-btn active" onclick="filterLang('all', this)">الكل</button>
+            <button class="lang-btn" onclick="filterLang('ar', this)">عربي</button>
+            <button class="lang-btn" onclick="filterLang('en', this)">EN</button>
+        </div>
+        <button onclick="fetchAll()" id="refresh-btn" style="background: var(--accent); color: white; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">تحديث</button>
+    </div>
+</div>
+
+<div class="container">
+    <div id="feed-container" class="news-list">
+        </div>
+</div>
+
+<script>
+// تحديث الروابط لضمان الجلب الصحيح
+const SOURCES = [
+    { id: 'aljazeera', name: 'الجزيرة', url: 'https://www.aljazeera.net/xml/rss/all.xml', lang: 'ar' },
+    { id: 'alarabiya', name: 'العربية', url: 'https://www.alarabiya.net/ar/tools/rss.xml', lang: 'ar' },
+    { id: 'sky', name: 'سكاي نيوز', url: 'https://www.skynewsarabia.com/web/rss', lang: 'ar' },
+    { id: 'reuters', name: 'Reuters', url: 'https://www.reutersagency.com/feed/?best-topics=political-general&format=xml', lang: 'en' },
+    { id: 'bbc', name: 'BBC News', url: 'https://feeds.bbci.co.uk/news/world/rss.xml', lang: 'en' }
+];
+
+let allNews = [];
+let currentLang = 'all';
+
+async function fetchAll() {
+    const container = document.getElementById('feed-container');
+    const btn = document.getElementById('refresh-btn');
+    btn.innerText = "...";
+    
+    // العبارة المطلوبة عند التحميل
+    if (allNews.length === 0) container.innerHTML = '<div style="text-align:center; padding:50px; color:var(--text-dim);">جاري جلب احدث الاخبار ..</div>';
+
+    let tempNews = [];
+    // استخدام بروكسي بديل لتجاوز مشاكل Forbidden
+    const proxy = "https://api.allorigins.win/raw?url=";
+
+    for (const src of SOURCES) {
+        try {
+            const response = await fetch(proxy + encodeURIComponent(src.url));
+            if (!response.ok) continue;
+            const text = await response.text();
+            const xml = new DOMParser().parseFromString(text, "text/xml");
+            const items = xml.querySelectorAll("item");
+            
+            items.forEach(item => {
+                const pDate = item.querySelector("pubDate")?.textContent;
+                const dateObj = pDate ? new Date(pDate) : new Date();
+                tempNews.push({
+                    title: item.querySelector("title")?.textContent || "",
+                    link: item.querySelector("link")?.textContent || "#",
+                    date: isNaN(dateObj.getTime()) ? new Date() : dateObj,
+                    source: src.name,
+                    lang: src.lang,
+                    description: item.querySelector("description")?.textContent.replace(/<[^>]*>?/gm, '').slice(0, 150).trim() + '...'
+                });
+            });
+        } catch (e) { console.warn(src.name + " failed"); }
+    }
+
+    if (tempNews.length > 0) {
+        // الترتيب الصارم: الأحدث في الأعلى
+        allNews = tempNews.sort((a, b) => b.date - a.date);
+        render();
+    }
+    btn.innerText = "تحديث";
+}
+
+function render() {
+    const container = document.getElementById('feed-container');
+    const filtered = currentLang === 'all' ? allNews : allNews.filter(n => n.lang === currentLang);
+    
+    container.innerHTML = filtered.map(item => `
+        <article class="news-card">
+            <div class="card-header">
+                <span class="source-badge">${item.source}</span>
+                ${(new Date() - item.date) < 21600000 ? '<span class="new-tag">خبر جديد</span>' : ''}
+            </div>
+            <a href="${item.link}" target="_blank" class="news-title">${item.title}</a>
+            <p class="news-desc">${item.description}</p>
+            <div class="card-footer">
+                <span>🕒 ${item.date.toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit', hour12: true})} | 📅 ${item.date.toLocaleDateString('en-GB')}</span>
+                <span style="color: var(--accent); font-weight:bold;">التفاصيل ←</span>
+            </div>
+        </article>
+    `).join('');
+}
+
+function filterLang(lang, btn) {
+    currentLang = lang;
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    render();
+}
+
+setInterval(() => {
+    document.getElementById('clock').innerText = new Date().toLocaleTimeString('en-GB');
+}, 1000);
+
+fetchAll();
+setInterval(fetchAll, 60000); // تحديث كل دقيقة
+</script>
+</body>
+</html>

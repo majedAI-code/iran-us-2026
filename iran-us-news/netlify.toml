@@ -1,0 +1,13 @@
+[build]
+  # تحديد المجلد الذي يحتوي على الوظائف البرمجية (Functions)
+  functions = "netlify/functions"
+
+[functions]
+  # تحديد أننا نستخدم Node.js لمعالجة جلب الـ RSS
+  node_bundle = true
+
+[[redirects]]
+  # توجيه الطلبات من الواجهة الأمامية إلى السيرفر الداخلي لـ Netlify
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
